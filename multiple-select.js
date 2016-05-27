@@ -533,7 +533,7 @@
             });
 
             // trigger <select> change event
-            if (!isInit) {
+            if (!isInit && isInit !== undefined) {
                 this.$el.trigger('change');
             }
         },
