@@ -737,9 +737,9 @@
         hideOptgroupCheckboxes: false,
 
         selectAllText: 'Select all',
-        allSelected: 'All selected',
-        countSelected: '# of % selected',
-        noMatchesFound: 'No matches found',
+        allSelected: 'Выбрано всё',
+        countSelected: 'Выбрано # из % ',
+        noMatchesFound: 'Ничего не найдено',
 
         styler: function () {
             return false;
