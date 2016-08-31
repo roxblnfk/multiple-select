@@ -480,7 +480,7 @@
 
         update: function (isInit) {
             var that = this,
-                selects = this.options.displayValues ? this.getSelects() : this.getSelects('text'),
+                selects = this.options.displayValues ? this.getSelects(null, true) : this.getSelects('text', true),
                 $span = this.$choice.find('>span'),
                 select_len,
                 total_len;
@@ -524,7 +524,7 @@
             }
 
             if (this.options.addTitle) {
-                $span.prop('title', this.getSelects('text'));
+                $span.prop('title', this.getSelects('text', true));
             }
 
             // set selects to select
@@ -568,11 +568,13 @@
         },
 
         //value or text, default: 'value'
-        getSelects: function (type) {
+        getSelects: function (type, noHidden) {
             var that = this,
                 texts = [],
-                values = [];
-            this.$drop.find(sprintf('input[%s]:checked', this.selectItemName)).not('[hidden="hidden"]').each(function () {
+                values = [],
+                toEach = this.$drop.find(sprintf('input[%s]:checked', this.selectItemName));
+            if (noHidden) toEach = toEach.not('[hidden="hidden"]');
+            toEach.each(function () {
                 texts.push($(this).parents('li').first().text());
                 values.push($(this).val());
             });
