@@ -238,6 +238,7 @@
             this.events();
             this.updateSelectAll(true);
             this.update(true);
+            this.updateOptGroupSelect();
 
             if (this.options.isOpen) {
                 this.open();
@@ -367,7 +368,9 @@
             });
             this.$selectGroups.off('click').on('click', function () {
                 var group = $(this).parent().attr('data-group'),
-                    $items = that.$selectItems.filter(':visible'),
+                    $items = that.options.multipleSelectFilteredOnly
+                               ? that.$selectItems.filter(':visible')
+                               : that.$selectItems,
                     $children = $items.filter(sprintf('[data-group="%s"]', group)),
                     checked = $children.length !== $children.filter(':checked').length;
 
@@ -473,21 +476,45 @@
         },
 
         update: function (isInit) {
-            var selects = this.options.displayValues ? this.getSelects() : this.getSelects('text'),
+            var that = this,
+                selects = this.options.displayValues ? this.getSelects() : this.getSelects('text'),
                 $span = this.$choice.find('>span'),
-                sl = selects.length;
+                select_len,
+                total_len;
 
-            if (sl === 0) {
+            if (this.$selectGroups.length != 0) {
+                var counts =
+                    this.$selectGroups.get().reduce( function(sums, current) {
+                        var $current = $(current),
+                            group = $current.parent().data('group'),
+                            $children = that.$drop.find(sprintf('[%s][data-group="%s"]', that.selectItemName, group)),
+                            $selected = $children.filter(':checked');
+                        return [ sums[0] + $selected.length, sums[1] + $children.length ];
+                    }, [0, 0])
+                select_len = counts[0];
+                total_len = counts[1];
+            } else {
+                select_len = selects.length;
+                total_len = this.$selectItems.length + this.$disableItems.length;
+            }
+
+
+            if (select_len === 0) {
                 $span.addClass('placeholder').html(this.options.placeholder);
-            } else if (this.options.allSelected && sl === this.$selectItems.length + this.$disableItems.length) {
+            } else if ( this.options.allSelected
+                        && select_len === this.$selectItems.length + this.$disableItems.length) {
                 $span.removeClass('placeholder').html(this.options.allSelected);
-            } else if (this.options.ellipsis && sl > this.options.minimumCountSelected) {
+            } else if ( this.options.ellipsis
+                        && select_len > this.options.minimumCountSelected) {
                 $span.removeClass('placeholder').text(selects.slice(0, this.options.minimumCountSelected)
                     .join(this.options.delimiter) + '...');
-            } else if (this.options.countSelected && sl > this.options.minimumCountSelected) {
-                $span.removeClass('placeholder').html(this.options.countSelected
-                    .replace('#', selects.length)
-                    .replace('%', this.$selectItems.length + this.$disableItems.length));
+            } else if ( this.options.countSelected
+                        && select_len > this.options.minimumCountSelected) {
+                $span.removeClass('placeholder').html(
+                    this.options.countSelected
+                        .replace('#', select_len )
+                        .replace('%', total_len )
+                );
             } else {
                 $span.removeClass('placeholder').text(selects.join(this.options.delimiter));
             }
@@ -506,7 +533,7 @@
             });
 
             // trigger <select> change event
-            if (!isInit) {
+            if (!isInit && isInit !== undefined) {
                 this.$el.trigger('change');
             }
         },
@@ -525,7 +552,9 @@
         },
 
         updateOptGroupSelect: function () {
-            var $items = this.$selectItems.filter(':visible');
+            var $items = this.options.multipleSelectFilteredOnly
+                             ? this.$selectItems.filter(':visible')
+                             : this.$selectItems;
             $.each(this.$selectGroups, function (i, val) {
                 var group = $(val).parent().attr('data-group'),
                     $children = $items.filter(sprintf('[data-group="%s"]', group));
@@ -644,8 +673,7 @@
                 this.$noResults.hide();
             } else {
                 this.$selectItems.each(function () {
-                    var $parent = $(this).parent();
-                    $parent[removeDiacritics($parent.text().toLowerCase()).indexOf(removeDiacritics(text)) < 0 ? 'hide' : 'show']();
+                    $(this).parent()[ that.options.filterFunction(this, text) ? 'show' : 'hide']();
                 });
                 this.$disableItems.parent().hide();
                 this.$selectGroups.each(function () {
@@ -735,6 +763,7 @@
         addTitle: false,
         filterAcceptOnEnter: false,
         hideOptgroupCheckboxes: false,
+        multipleSelectFilteredOnly: true,
 
         selectAllText: 'Select all',
         allSelected: 'Выбрано всё',
@@ -749,6 +778,10 @@
         },
         labelTemplate: function ($elm) {
             return $elm.attr('label');
+        },
+        filterFunction: function (item, text) {
+            return removeDiacritics( $(item).parent().text().toLowerCase() )
+                .indexOf(removeDiacritics(text)) >= 0
         },
 
         onOpen: function () {
