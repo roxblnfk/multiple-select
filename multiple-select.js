@@ -233,6 +233,7 @@
             this.$selectGroups = this.$drop.find('input[' + this.selectGroupName + ']');
             this.$selectItems = this.$drop.find('input[' + this.selectItemName + ']:enabled');
             this.$disableItems = this.$drop.find('input[' + this.selectItemName + ']:disabled');
+            this.$hiddenItems = this.$drop.find('input[' + this.selectItemName + '][hidden="hidden"]');
             this.$noResults = this.$drop.find('.ms-no-results');
 
             this.events();
@@ -261,7 +262,6 @@
                     selected = $elm.prop('selected'),
                     style = sprintf('style="%s"', this.options.styler(value)),
                     $el;
-                console.log(hidden);
 
                 disabled = groupDisabled || $elm.prop('disabled');
 
@@ -272,6 +272,7 @@
                         type, this.selectItemName,
                         selected ? ' checked="checked"' : '',
                         disabled ? ' disabled="disabled"' : '',
+                        hidden ? ' hidden="hidden"' : '',
                         sprintf(' data-group="%s"', group)),
                     sprintf('<span>%s</span>', text),
                     '</label>',
@@ -489,15 +490,16 @@
                     this.$selectGroups.get().reduce( function(sums, current) {
                         var $current = $(current),
                             group = $current.parent().data('group'),
-                            $children = that.$drop.find(sprintf('[%s][data-group="%s"]', that.selectItemName, group)),
+                            hidden = !$current.parent().hasClass('hidden'),
+                            $children = that.$drop.find(sprintf('[%s][data-group="%s"]', that.selectItemName, group)).not('[hidden="hidden"]'),
                             $selected = $children.filter(':checked');
-                        return [ sums[0] + $selected.length, sums[1] + $children.length ];
-                    }, [0, 0])
+                        return [ sums[0] + (hidden ? 0 : $selected.length), sums[1] + (hidden ? 0 : $children.length) ];
+                    }, [0, 0]);
                 select_len = counts[0];
                 total_len = counts[1];
             } else {
                 select_len = selects.length;
-                total_len = this.$selectItems.length + this.$disableItems.length;
+                total_len = this.$selectItems.length + this.$disableItems.length - this.$hiddenItems.length;
             }
 
 
@@ -570,7 +572,7 @@
             var that = this,
                 texts = [],
                 values = [];
-            this.$drop.find(sprintf('input[%s]:checked', this.selectItemName)).each(function () {
+            this.$drop.find(sprintf('input[%s]:checked', this.selectItemName)).not('[hidden="hidden"]').each(function () {
                 texts.push($(this).parents('li').first().text());
                 values.push($(this).val());
             });
@@ -578,10 +580,11 @@
             if (type === 'text' && this.$selectGroups.length) {
                 texts = [];
                 this.$selectGroups.each(function () {
+                    if ($(this).hasClass('hidden')) return;
                     var html = [],
                         text = $.trim($(this).parent().text()),
                         group = $(this).parent().data('group'),
-                        $children = that.$drop.find(sprintf('[%s][data-group="%s"]', that.selectItemName, group)),
+                        $children = that.$drop.find(sprintf('[%s][data-group="%s"]', that.selectItemName, group)).not('[hidden="hidden"]'),
                         $selected = $children.filter(':checked');
 
                     if (!$selected.length) {
@@ -767,7 +770,7 @@
         hideOptgroupCheckboxes: false,
         multipleSelectFilteredOnly: true,
 
-        selectAllText: 'Select all',
+        selectAllText: 'Выбрать все',
         allSelected: 'Выбрано всё',
         countSelected: 'Выбрано # из % ',
         noMatchesFound: 'Ничего не найдено',
