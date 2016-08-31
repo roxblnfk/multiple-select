@@ -251,6 +251,7 @@
                 classes = $elm.attr('class') || '',
                 title = sprintf('title="%s"', $elm.attr('title')),
                 multiple = this.options.multiple ? 'multiple' : '',
+                hidden = $elm.prop('hidden'),
                 disabled,
                 type = this.options.single ? 'radio' : 'checkbox';
 
@@ -260,11 +261,12 @@
                     selected = $elm.prop('selected'),
                     style = sprintf('style="%s"', this.options.styler(value)),
                     $el;
+                console.log(hidden);
 
                 disabled = groupDisabled || $elm.prop('disabled');
 
                 $el = $([
-                    sprintf('<li class="%s %s" %s %s>', multiple, classes, title, style),
+                    sprintf('<li class="%s %s %s" %s %s>', multiple, classes, hidden ? 'hidden' : '', title, style),
                     sprintf('<label class="%s">', disabled ? 'disabled' : ''),
                     sprintf('<input type="%s" %s%s%s%s>',
                         type, this.selectItemName,
@@ -286,7 +288,7 @@
                 disabled = $elm.prop('disabled');
 
                 $group.append([
-                    '<li class="group">',
+                    sprintf('<li class="group %s">', hidden ? 'hidden' : ''),
                     sprintf('<label class="optgroup %s" data-group="%s">', disabled ? 'disabled' : '', group),
                     this.options.hideOptgroupCheckboxes || this.options.single ? '' :
                         sprintf('<input type="checkbox" %s %s>',
